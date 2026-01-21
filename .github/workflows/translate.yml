@@ -2,13 +2,24 @@ name: Translate
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: master
     paths:
       - "localizations/en_US.json"
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Commit SHA to checkout (optional, defaults to latest)"
+        required: false
+        type: string
+      base_branch:
+        description: "Base branch for PR (defaults to master)"
+        required: false
+        type: string
+        default: "master"
 
 jobs:
   translate:
-    if: github.event.pusher.name == 'alexmercerind' && github.event.pusher.email == 'saini123hitesh@gmail.com'
+    if: github.event_name == 'workflow_dispatch' || (github.event.pusher.name == 'alexmercerind' && github.event.pusher.email == 'saini123hitesh@gmail.com')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -17,6 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.commit_sha || github.sha }}
           fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -51,4 +63,5 @@ jobs:
           title: "Auto-Translate Localizations"
           body: "This pull request contains automatically generated translations based on changes to `en_US.json`."
           branch: auto-translate-${{ github.run_number }}
+          base: ${{ github.event.inputs.base_branch || github.ref_name }}
           delete-branch: true
